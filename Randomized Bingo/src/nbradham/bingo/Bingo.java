@@ -28,14 +28,18 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
+ * Handles everything.
  *
- * @author nbradham
+ * @author Nickolas S. Bradham
  */
 public final class Bingo {
 
     private final BingoCell[][] cells = new BingoCell[5][5];
     private String[] opts;
 
+    /**
+     * Create and show GUI.
+     */
     private void start() {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Bingo!");
@@ -62,7 +66,7 @@ public final class Bingo {
             frame.setJMenuBar(bar);
             for (byte r = 0; r < cells.length; ++r) {
                 for (byte c = 0; c < cells[r].length; ++c) {
-                    frame.add((cells[r][c] = new BingoCell(r, c)).pane);
+                    frame.add((cells[r][c] = new BingoCell()).pane);
                 }
             }
             cells[2][2].setCenter();
@@ -71,6 +75,9 @@ public final class Bingo {
         });
     }
 
+    /**
+     * Resets all cells.
+     */
     private void resetAll() {
         for (BingoCell[] r : cells) {
             for (BingoCell c : r) {
@@ -79,6 +86,9 @@ public final class Bingo {
         }
     }
 
+    /**
+     * Regenerates all cells.
+     */
     private void regen() {
         Stack<String> stack = new Stack<>();
         stack.addAll(Arrays.asList(opts));
@@ -93,6 +103,14 @@ public final class Bingo {
         }
     }
 
+    /**
+     * Creates a JMenuItem
+     *
+     * @param text The text of the item.
+     * @param accel The accelerator key to use.
+     * @param l The ActionListener to call on click.
+     * @return The newly created JMenuItem
+     */
     private static JMenuItem createItem(String text, int accel, ActionListener l) {
         JMenuItem i = new JMenuItem(text);
         i.setAccelerator(KeyStroke.getKeyStroke(accel, KeyEvent.CTRL_DOWN_MASK));
@@ -101,12 +119,17 @@ public final class Bingo {
     }
 
     /**
-     * @param args the command line arguments
+     * Constructs and starts a new Bingo instance.
+     *
+     * @param args Ignored.
      */
     public static void main(String[] args) {
         new Bingo().start();
     }
 
+    /**
+     * Handles cell logic.
+     */
     private final class BingoCell {
 
         private static final Color C_UNSEL = Color.DARK_GRAY, C_SEL = Color.MAGENTA;
@@ -114,13 +137,13 @@ public final class Bingo {
 
         private final JPanel pane = new JPanel(new BorderLayout());
         private final JLabel label = new JLabel("Bingo!", JLabel.CENTER);
-        private final byte r, c;
 
         private boolean notCent = true, sel = false;
 
-        private BingoCell(byte row, byte col) {
-            r = row;
-            c = col;
+        /**
+         * Constructs a new BingoCell.
+         */
+        private BingoCell() {
             pane.setPreferredSize(new Dimension(200, 200));
             pane.setBorder(B_DEF);
             pane.setBackground(C_UNSEL);
@@ -185,6 +208,9 @@ public final class Bingo {
             pane.add(label);
         }
 
+        /**
+         * Sets this cell as the center free cell.
+         */
         private void setCenter() {
             notCent = false;
             sel = true;
@@ -192,10 +218,18 @@ public final class Bingo {
             label.setText("Free!");
         }
 
+        /**
+         * Sets the label text.
+         *
+         * @param text The text to display.
+         */
         private void setText(String text) {
             label.setText("<html><style>h1 {text-align: center;}</style><h1>" + text + "</h1></html>");
         }
 
+        /**
+         * Resets this cell.
+         */
         private void reset() {
             if (sel && notCent) {
                 toggle();
@@ -203,14 +237,23 @@ public final class Bingo {
             noBing();
         }
 
+        /**
+         * Toggles the selection state of this cell.
+         */
         private void toggle() {
             pane.setBackground((sel = !sel) ? C_SEL : C_UNSEL);
         }
 
+        /**
+         * Marks this cell as part of a bingo.
+         */
         private void bing() {
             pane.setBorder(B_BING);
         }
 
+        /**
+         * Unmarks this cell from being part of a bingo.
+         */
         private void noBing() {
             pane.setBorder(B_DEF);
         }
