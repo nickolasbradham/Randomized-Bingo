@@ -34,9 +34,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public final class Bingo {
 
-    private static final Color C_UNSEL = Color.DARK_GRAY, C_SEL = Color.MAGENTA;
-    private static final LineBorder B_DEF = new LineBorder(Color.BLACK), B_BING = new LineBorder(Color.ORANGE, 10);
-
     private final BingoCell[][] cells = new BingoCell[5][5];
     private String[] opts;
 
@@ -134,6 +131,9 @@ public final class Bingo {
      * Handles cell logic.
      */
     private final class BingoCell {
+
+        private static final Color C_UNSEL = Color.DARK_GRAY, C_SEL = Color.MAGENTA;
+        private static final LineBorder B_DEF = new LineBorder(Color.BLACK), B_BING = new LineBorder(Color.ORANGE, 10);
 
         private final JPanel pane = new JPanel(new BorderLayout());
         private final JLabel label = new JLabel("Bingo!", JLabel.CENTER);
