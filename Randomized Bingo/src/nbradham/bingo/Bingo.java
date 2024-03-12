@@ -8,6 +8,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -34,6 +39,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public final class Bingo {
 
+    private static final FileNameExtensionFilter F_TXT = new FileNameExtensionFilter("Line Seperated Text File", "txt"), F_BNG = new FileNameExtensionFilter("Bingo Game", "bng");
+    private static final File EMPTY = new File("");
+
+    private final JFileChooser jfc = new JFileChooser();
+    private final JFrame frame = new JFrame("Bingo!");
     private final BingoCell[][] cells = new BingoCell[5][5];
     private String[] opts;
 
@@ -42,15 +52,13 @@ public final class Bingo {
      */
     private void start() {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Bingo!");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new GridLayout(5, 5));
             JMenuBar bar = new JMenuBar();
             JMenu actMen = new JMenu("Action");
-            JFileChooser jfc = new JFileChooser();
-            jfc.setDialogTitle("Open Option List");
-            jfc.setFileFilter(new FileNameExtensionFilter("Line Seperated Text File", "txt"));
-            actMen.add(createItem("Load Opts...", KeyEvent.VK_L, e -> {
+            actMen.setMnemonic(KeyEvent.VK_A);
+            actMen.add(createItem("Load Opts...", KeyEvent.VK_O, e -> {
+                prepJFC("Open Option List", F_TXT);
                 if (jfc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                     try {
                         opts = Files.readString(jfc.getSelectedFile().toPath()).split("\n");
@@ -60,8 +68,46 @@ public final class Bingo {
                     }
                 }
             }));
-            actMen.add(createItem("Reset", KeyEvent.VK_R, e -> resetAll()));
+            actMen.add(createItem("Save Game...", KeyEvent.VK_S, e -> {
+                prepJFC("Save File", F_BNG);
+                if (jfc.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        DataOutputStream dos = new DataOutputStream(new FileOutputStream(jfc.getSelectedFile()));
+                        for (BingoCell[] r : cells) {
+                            for (BingoCell c : r) {
+                                dos.writeUTF(c.label.getText());
+                                dos.writeBoolean(c.sel);
+                            }
+                        }
+                        dos.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(Bingo.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }));
+            actMen.add(createItem("Load Game...", KeyEvent.VK_L, e -> {
+                prepJFC("Load File", F_BNG);
+                if (jfc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        DataInputStream dis = new DataInputStream(new FileInputStream(jfc.getSelectedFile()));
+                        resetAll();
+                        for (BingoCell[] r : cells) {
+                            for (BingoCell c : r) {
+                                c.label.setText(dis.readUTF());
+                                if (dis.readBoolean() && c.notCent) {
+                                    c.toggle();
+                                }
+                            }
+                        }
+                        dis.close();
+                        bingCheck();
+                    } catch (IOException ex) {
+                        Logger.getLogger(Bingo.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }));
             actMen.add(createItem("Regenerate", KeyEvent.VK_G, e -> regen()));
+            actMen.add(createItem("Reset", KeyEvent.VK_R, e -> resetAll()));
             bar.add(actMen);
             frame.setJMenuBar(bar);
             for (byte r = 0; r < cells.length; ++r) {
@@ -73,6 +119,12 @@ public final class Bingo {
             frame.pack();
             frame.setVisible(true);
         });
+    }
+
+    private void prepJFC(String title, FileNameExtensionFilter filter) {
+        jfc.setDialogTitle(title);
+        jfc.setFileFilter(filter);
+        jfc.setSelectedFile(EMPTY);
     }
 
     /**
@@ -103,6 +155,56 @@ public final class Bingo {
         }
     }
 
+    private void bingCheck() {
+        boolean bing;
+        for (BingoCell[] r : cells) {
+            for (BingoCell c : r) {
+                c.noBing();
+            }
+        }
+        for (byte r = 0; r < cells.length; ++r) {
+            bing = true;
+            for (byte c = 0; bing && c < cells[r].length; ++c) {
+                bing = cells[r][c].sel;
+            }
+            if (bing) {
+                for (byte c = 0; bing && c < cells[r].length; ++c) {
+                    cells[r][c].bing();
+                }
+            }
+        }
+        for (byte c = 0; c < cells.length; ++c) {
+            bing = true;
+            for (byte r = 0; bing && r < cells[0].length; ++r) {
+                bing = cells[r][c].sel;
+            }
+            if (bing) {
+                for (byte r = 0; bing && r < cells[0].length; ++r) {
+                    cells[r][c].bing();
+                }
+            }
+        }
+        bing = true;
+        for (byte x = 0; bing && x < cells[0].length; ++x) {
+            bing = cells[x][x].sel;
+        }
+        if (bing) {
+            for (byte x = 0; bing && x < cells[0].length; ++x) {
+                cells[x][x].bing();
+            }
+        }
+        bing = true;
+        int lm = cells[0].length - 1;
+        for (byte x = 0; bing && x < cells[0].length; ++x) {
+            bing = cells[x][lm - x].sel;
+        }
+        if (bing) {
+            for (byte x = 0; bing && x < cells[0].length; ++x) {
+                cells[x][lm - x].bing();
+            }
+        }
+    }
+
     /**
      * Creates a JMenuItem
      *
@@ -115,6 +217,7 @@ public final class Bingo {
         JMenuItem i = new JMenuItem(text);
         i.setAccelerator(KeyStroke.getKeyStroke(accel, KeyEvent.CTRL_DOWN_MASK));
         i.addActionListener(l);
+        i.setMnemonic(accel);
         return i;
     }
 
@@ -152,53 +255,7 @@ public final class Bingo {
                 public final void mousePressed(MouseEvent e) {
                     if (notCent) {
                         toggle();
-                        boolean bing;
-                        for (BingoCell[] r : cells) {
-                            for (BingoCell c : r) {
-                                c.noBing();
-                            }
-                        }
-                        for (byte r = 0; r < cells.length; ++r) {
-                            bing = true;
-                            for (byte c = 0; bing && c < cells[r].length; ++c) {
-                                bing = cells[r][c].sel;
-                            }
-                            if (bing) {
-                                for (byte c = 0; bing && c < cells[r].length; ++c) {
-                                    cells[r][c].bing();
-                                }
-                            }
-                        }
-                        for (byte c = 0; c < cells.length; ++c) {
-                            bing = true;
-                            for (byte r = 0; bing && r < cells[0].length; ++r) {
-                                bing = cells[r][c].sel;
-                            }
-                            if (bing) {
-                                for (byte r = 0; bing && r < cells[0].length; ++r) {
-                                    cells[r][c].bing();
-                                }
-                            }
-                        }
-                        bing = true;
-                        for (byte x = 0; bing && x < cells[0].length; ++x) {
-                            bing = cells[x][x].sel;
-                        }
-                        if (bing) {
-                            for (byte x = 0; bing && x < cells[0].length; ++x) {
-                                cells[x][x].bing();
-                            }
-                        }
-                        bing = true;
-                        int lm = cells[0].length - 1;
-                        for (byte x = 0; bing && x < cells[0].length; ++x) {
-                            bing = cells[x][lm - x].sel;
-                        }
-                        if (bing) {
-                            for (byte x = 0; bing && x < cells[0].length; ++x) {
-                                cells[x][lm - x].bing();
-                            }
-                        }
+                        bingCheck();
                     }
                 }
             });
