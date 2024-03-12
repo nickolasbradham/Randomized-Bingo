@@ -39,7 +39,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public final class Bingo {
 
-    private static final FileNameExtensionFilter F_TXT = new FileNameExtensionFilter("Line Seperated Text File", "txt"), F_BNG = new FileNameExtensionFilter("Bingo Game", "bng");
+    private static final String XT_BNG = "bng";
+    private static final FileNameExtensionFilter F_TXT = new FileNameExtensionFilter("Line Seperated Text File", "txt"), F_BNG = new FileNameExtensionFilter("Bingo Game", XT_BNG);
     private static final File EMPTY = new File("");
 
     private final JFileChooser jfc = new JFileChooser();
@@ -72,7 +73,11 @@ public final class Bingo {
                 prepJFC("Save File", F_BNG);
                 if (jfc.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
                     try {
-                        DataOutputStream dos = new DataOutputStream(new FileOutputStream(jfc.getSelectedFile()));
+                        File f = jfc.getSelectedFile();
+                        if (!f.getName().endsWith(XT_BNG)) {
+                            f = new File(f.getAbsoluteFile().toString() + '.' + XT_BNG);
+                        }
+                        DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
                         for (BingoCell[] r : cells) {
                             for (BingoCell c : r) {
                                 dos.writeUTF(c.label.getText());
